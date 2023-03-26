@@ -72,10 +72,10 @@ const server = new ApolloServer({
     introspection: true,
     context: async ({ req }) => {
         // get the user token from the headers
-        const token = req.headers.authorization || '';
+        const token = req.headers.authorization;
     
         // Block requests
-        if (token != authKey)
+        if (token != authKey.value())
           // throwing a `GraphQLError` here allows us to specify an HTTP status code,
           // standard `Error`s will have a 500 status code by default
           throw new GraphQLError('User is not authenticated', {
