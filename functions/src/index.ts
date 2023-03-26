@@ -1,9 +1,9 @@
 import { ApolloServer } from "apollo-server-cloud-functions";
-// const { config } = require('./config');
 import * as functions from "firebase-functions";
-// const { defineString } = require('firebase-functions/params');
+const { defineString } = require('firebase-functions/params');
+import { GraphQLError } from 'graphql';
 
-// const authKey = defineString('AUTH_KEY');
+const authKey = defineString('AUTH_KEY');
 
 // For accessing Firestore database
 const admin = require("firebase-admin");
@@ -32,7 +32,7 @@ type SeriesValue {
 
 # The "Query" type is special: it lists all of the available queries that
 # clients can execute, along with the return type for each. In this
-# case, the "books" query returns an array of zero or more Books (defined above).
+# case, the "dataPoints" query returns an array of zero or more DataPoints (defined above).
 type Query {
     dataPoints: [DataPoint]
 }
@@ -69,31 +69,25 @@ const fetchAllDataPoints = (callback: { (data: any): void; (arg0: any[]): any; }
 const server = new ApolloServer({
     typeDefs,
     resolvers,
-    introspection: true
+    introspection: true,
+    context: async ({ req }) => {
+        // get the user token from the headers
+        const token = req.headers.authorization || '';
+    
+        // Block requests
+        if (token != authKey)
+          // throwing a `GraphQLError` here allows us to specify an HTTP status code,
+          // standard `Error`s will have a 500 status code by default
+          throw new GraphQLError('User is not authenticated', {
+            extensions: {
+              code: 'UNAUTHENTICATED',
+              http: { status: 401 },
+            },
+          });
+    
+        // add the user to the context
+        return { isAuthenticated: true };
+    }
 });
 
-// let authenticatedHandler = function (req: functions.https.Request, resp: functions.Response<any>) {
-
-//     if (req.headers["authorization"] == authKey) {
-
-//         server.createHandler()
-
-//         resp.send("Authorized");
-//     } else {
-//         // resp.statusCode = 403
-//         resp.send("Not Authorized");
-//     }
-// }
-
 export const graphql = functions.https.onRequest(server.createHandler());
-
-// export const graphql = functions.https.onRequest((req, resp) => {
-
-//     if (req.headers["authorization"] == authKey.value()) {
-//         server.createHandler();
-//     } else {
-//         resp.statusCode = 403;
-//         resp.send("Not Authorized");
-//     }
-// });
-
