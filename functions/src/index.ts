@@ -1,8 +1,9 @@
 import { ApolloServer } from "apollo-server-cloud-functions";
+// const { config } = require('./config');
 import * as functions from "firebase-functions";
-const { defineString } = require('firebase-functions/params');
+// const { defineString } = require('firebase-functions/params');
 
-const authKey = defineString('AUTH_KEY');
+// const authKey = defineString('AUTH_KEY');
 
 // For accessing Firestore database
 const admin = require("firebase-admin");
@@ -71,14 +72,28 @@ const server = new ApolloServer({
     introspection: true
 });
 
-let authenticatedHandler = function (req: functions.https.Request, resp: functions.Response<any>) {
+// let authenticatedHandler = function (req: functions.https.Request, resp: functions.Response<any>) {
 
-    if (req.headers["Authorization"] == authKey) {
-        server.createHandler()
-    } else {
-        resp.statusCode = 403
-    }
-}
+//     if (req.headers["authorization"] == authKey) {
 
-export const graphql = functions.https.onRequest(authenticatedHandler);
+//         server.createHandler()
+
+//         resp.send("Authorized");
+//     } else {
+//         // resp.statusCode = 403
+//         resp.send("Not Authorized");
+//     }
+// }
+
+export const graphql = functions.https.onRequest(server.createHandler());
+
+// export const graphql = functions.https.onRequest((req, resp) => {
+
+//     if (req.headers["authorization"] == authKey.value()) {
+//         server.createHandler();
+//     } else {
+//         resp.statusCode = 403;
+//         resp.send("Not Authorized");
+//     }
+// });
 
