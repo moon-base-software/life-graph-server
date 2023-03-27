@@ -1,6 +1,7 @@
 module.exports = {
     client: {
+      name: "Moon Base Software",
       service: "moon-base-software",
-      includes: ["./functions/src/**/*.js"],
+      includes: ["./functions/**/*.js"],
     },
   };
