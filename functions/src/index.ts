@@ -1,7 +1,10 @@
 import { ApolloServer } from "apollo-server-cloud-functions";
+import { Timestamp } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
 const { defineString } = require('firebase-functions/params');
 import { GraphQLError } from 'graphql';
+import { GraphQLScalarType, Kind } from 'graphql';
+const { loadFile } = require('graphql-import-files')
 
 const authKey = defineString('AUTH_KEY');
 
@@ -12,37 +15,37 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
 
-// A schema is a collection of type definitions (hence "typeDefs")
-// that together define the "shape" of queries that are executed against
-// your data.
-const typeDefs = `#graphql
-type DataPoint {
-    uuid: String
-    seriesValues: [SeriesValue]
-}
-
-type Series {
-    identifier: String
-}
-
-type SeriesValue {
-    series: String
-    value: String
-}
-
-# The "Query" type is special: it lists all of the available queries that
-# clients can execute, along with the return type for each. In this
-# case, the "dataPoints" query returns an array of zero or more DataPoints (defined above).
-type Query {
-    dataPoints: [DataPoint]
-}
-`;
+const dateTimeScalar = new GraphQLScalarType({
+    name: 'DateTime',
+    description: 'Custom scalar type for Date and Time',
+    serialize(value) {
+      if (value instanceof Timestamp) {
+        return value.toDate(); // Convert outgoing Date to integer for JSON
+      }
+      throw Error('GraphQL DateTime Scalar serializer expected a `Timestamp` object');
+    },
+    parseValue(value) {
+      if (typeof value === 'number') {
+        return new Date(value); // Convert incoming integer to Date
+      }
+      throw new Error('GraphQL Date Scalar parser expected a `number`');
+    },
+    parseLiteral(ast) {
+      if (ast.kind === Kind.INT) {
+        // Convert hard-coded AST string to integer and then to Date
+        return new Date(parseInt(ast.value, 10));
+      }
+      // Invalid hard-coded value (not an integer)
+      return null;
+    },
+  });
 
 const resolvers = {
+    DateTime: dateTimeScalar,
     Query: {
-        dataPoints: () => {
+        thoughts: () => {
             return new Promise((resolve, reject) => {
-                fetchAllDataPoints((data) => {
+                fetchAllThoughts((data) => {
                     resolve(data);
                 });
             });
@@ -51,8 +54,8 @@ const resolvers = {
 }
 
 // Function to fetch all data points from database
-const fetchAllDataPoints = (callback: { (data: any): void; (arg0: any[]): any; }) => {
-    db.collection("data-points")
+const fetchAllThoughts = (callback: { (data: any): void; (arg0: any[]): any; }) => {
+    db.collection("thoughts")
     .get()
     .then((item: { docs: any[]; }) => {
         const items: any[] = [];
@@ -67,7 +70,7 @@ const fetchAllDataPoints = (callback: { (data: any): void; (arg0: any[]): any; }
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.
 const server = new ApolloServer({
-    typeDefs,
+    typeDefs: loadFile('./src/schema/schema.gql'),
     resolvers,
     introspection: true,
     context: async ({ req }) => {

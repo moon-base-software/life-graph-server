@@ -1,0 +1,15 @@
+# Moon Base Software - Life Graph Server
+
+## Maintenance Commands
+
+### Deploy to Firebase Functions
+
+```bash
+firebase deploy --only functions
+```
+
+### Update Supergraph Schema
+
+```bash
+rover subgraph publish moon-base-software@main --schema src/schema/schema.gql --name moon-base-software-life-graph --routing-url "https://us-central1-moon-base-software.cloudfunctions.net/graphql"
+```
