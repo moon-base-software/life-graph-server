@@ -10,6 +10,36 @@ firebase deploy --only functions
 
 ### Update Supergraph Schema
 
-```bash
-rover subgraph publish moon-base-software@main --schema src/schema/schema.gql --name moon-base-software-life-graph --routing-url "https://us-central1-moon-base-software.cloudfunctions.net/graphql"
+Editing schema building in `index.ts` to emit a schema file
+```javascript
+const schema = buildSchemaSync({
+    resolvers: [ThoughtsResolver],
+    emitSchemaFile: true
+});
 ```
+
+Run to generate scheme file
+```bash
+npm start
+```
+
+Publish subgraph schema to super graph
+```bash
+rover subgraph publish moon-base-software@main --schema schema.gql --name moon-base-software-life-graph --routing-url "https://us-central1-moon-base-software.cloudfunctions.net/graphql"
+```
+
+### Running Locally
+
+Run locally with Firebase emulators
+```bash
+firebase emulators:start
+```
+
+*TODO*
+Switch to local Firestore config when running locally.
+
+Visit the local endpoint
+```
+http://127.0.0.1:5001/moon-base-software/us-central1/graphql/
+```
+

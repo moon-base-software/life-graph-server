@@ -9,6 +9,9 @@
     "target": "es2017",
     "skipLibCheck": true,
     "typeRoots": ["node_modules/@types"],
+    "lib": ["esnext.asynciterable"],
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
   },
   "compileOnSave": true,
   "include": [

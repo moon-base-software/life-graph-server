@@ -65,3 +65,9 @@ node_modules/
 # dotenv environment variables file
 .env
 functions/.env.moon-base-software
+
+# Firebase logs
+.log
+
+# Firebase Config
+firebase-config.ts
