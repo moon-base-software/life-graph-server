@@ -75,8 +75,7 @@ new DataStore(app)
 // }
 
 const schema = buildSchemaSync({
-    resolvers: [ThoughtsResolver],
-    emitSchemaFile: true
+    resolvers: [ThoughtsResolver]
 });
 
 // The ApolloServer constructor requires two parameters: your schema
