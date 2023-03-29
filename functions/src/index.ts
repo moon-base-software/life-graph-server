@@ -20,8 +20,6 @@ const authKey = defineString('AUTH_KEY');
 const app = initializeApp(firebaseConfig)
 new DataStore(app)
 
-// const db = getFirestore(app);
-
 // const dateTimeScalar = new GraphQLScalarType({
 //     name: 'DateTime',
 //     description: 'Custom scalar type for Date and Time',
@@ -47,35 +45,11 @@ new DataStore(app)
 //     },
 //   });
 
-// const resolvers = {
-//     DateTime: dateTimeScalar,
-//     Query: {
-//         thoughts: () => {
-//             return new Promise((resolve, reject) => {
-//                 fetchAllThoughts((data) => {
-//                     resolve(data);
-//                 });
-//             });
-//         }
-//     }
-// }
-
-// // Function to fetch all data points from database
-// const fetchAllThoughts = (callback: { (data: any): void; (arg0: any[]): any; }) => {
-//     db.collection("thoughts")
-//     .get()
-//     .then((item: { docs: any[]; }) => {
-//         const items: any[] = [];
-//         item.docs.forEach((item: { data: () => any; }) => {
-//             items.push(item.data())
-//         });
-//         return callback(items);
-//     })
-//     .catch((e: any) => console.log(e));
-// }
 
 const schema = buildSchemaSync({
-    resolvers: [ThoughtsResolver]
+    resolvers: [ThoughtsResolver],
+    dateScalarMode: "timestamp",
+    emitSchemaFile: process.env.GENERATE_SCHEMA == "true" ?? false
 });
 
 // The ApolloServer constructor requires two parameters: your schema

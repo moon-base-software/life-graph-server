@@ -15,6 +15,12 @@ type Query {
 
 """Thought model"""
 type Thought {
+  createdAt: Timestamp!
   id: ID!
   text: String!
 }
+
+"""
+The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch.
+"""
+scalar Timestamp

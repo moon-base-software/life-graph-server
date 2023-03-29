@@ -11,15 +11,19 @@ export class ThoughtsResolver {
     db = DataStore.singleton.db
 
     makeThought(docRef: DocumentSnapshot<DocumentData>): Thought {
-        const data = docRef.data()
+        const data = docRef.data() as DocumentData
         if (data === undefined) {
             throw new Error("No thought with that id")
         }
-        const text = data["text"]
+        const text = data["text"] as String
         if (text === undefined) {
             throw new Error("Thought has no text")
         }
-        return new Thought(docRef.id, text)
+        const createdAt = data["createdAt"] as Timestamp
+        if (createdAt === undefined) {
+            throw new Error("Thought has no created date")
+        }
+        return new Thought(docRef.id, text, createdAt.toDate())
     }
 
     @Query((_returns) => Thought, { nullable: false })

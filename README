@@ -20,7 +20,13 @@ const schema = buildSchemaSync({
 
 Run to generate scheme file
 ```bash
+export GENERATE_SCHEMA="true"
 npm start
+```
+
+Visit the local endpoint to trigger schema generation
+```
+http://127.0.0.1:5001/moon-base-software/us-central1/graphql/
 ```
 
 Publish subgraph schema to super graph
@@ -35,7 +41,7 @@ Run locally with Firebase emulators
 firebase emulators:start
 ```
 
-*TODO*
+**TODO**
 Switch to local Firestore config when running locally.
 
 Visit the local endpoint
