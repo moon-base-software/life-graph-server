@@ -48,7 +48,7 @@ new DataStore(app)
 
 const schema = buildSchemaSync({
     resolvers: [ThoughtsResolver],
-    dateScalarMode: "timestamp",
+    dateScalarMode: "isoDate", // "timestamp",
     emitSchemaFile: process.env.GENERATE_SCHEMA == "true" ?? false
 });
 

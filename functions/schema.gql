@@ -3,8 +3,13 @@
 # !!!   DO NOT MODIFY THIS FILE BY YOURSELF   !!!
 # -----------------------------------------------
 
+"""
+The javascript `Date` as string. Type represents date and time as the ISO Date string.
+"""
+scalar DateTime
+
 type Mutation {
-  createThought(text: String!): Thought!
+  createThought(creationLocationLat: Float, creationLocationLon: Float, creationTimezone: String!, text: String!): Thought!
   deleteThought(id: String!): Boolean!
 }
 
@@ -15,12 +20,10 @@ type Query {
 
 """Thought model"""
 type Thought {
-  createdAt: Timestamp!
+  creationDateTime: DateTime!
+  creationLocalTimezone: String!
+  creationLocationLat: Float
+  creationLocationLon: Float
   id: ID!
   text: String!
 }
-
-"""
-The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch.
-"""
-scalar Timestamp

@@ -1,5 +1,5 @@
 import { Resolver, Mutation, Arg, Query } from 'type-graphql';
-import { collection, getDocs, getDoc, setDoc, doc, DocumentSnapshot, DocumentData, Timestamp, deleteDoc } from 'firebase/firestore/lite';
+import { collection, getDocs, getDoc, setDoc, doc, DocumentSnapshot, DocumentData, Timestamp, deleteDoc, GeoPoint } from 'firebase/firestore/lite';
 import { Thought } from '../entities/thought';
 import { DataStore } from '../datastore'
 
@@ -11,19 +11,31 @@ export class ThoughtsResolver {
     db = DataStore.singleton.db
 
     makeThought(docRef: DocumentSnapshot<DocumentData>): Thought {
-        const data = docRef.data() as DocumentData
+        const data = docRef.data() as DocumentData | undefined
         if (data === undefined) {
             throw new Error("No thought with that id")
         }
-        const text = data["text"] as String
+        const text = data["text"] as String | undefined
         if (text === undefined) {
             throw new Error("Thought has no text")
         }
-        const createdAt = data["createdAt"] as Timestamp
-        if (createdAt === undefined) {
-            throw new Error("Thought has no created date")
+        const creationDateTime = data["creation_datetime"] as Timestamp | undefined
+        if (creationDateTime === undefined) {
+            throw new Error("Thought has no creation date")
         }
-        return new Thought(docRef.id, text, createdAt.toDate())
+        const creationTimezone = data["creation_timezone"] as String | undefined
+        if (creationTimezone === undefined) {
+            throw new Error("Thought has no creation timezone")
+        }
+        const creationLocation = data["creation_location"] as GeoPoint | undefined
+        return new Thought(
+            docRef.id, 
+            text, 
+            creationDateTime.toDate(), 
+            creationTimezone, 
+            creationLocation?.latitude, 
+            creationLocation?.longitude,
+            )
     }
 
     @Query((_returns) => Thought, { nullable: false })
@@ -42,14 +54,23 @@ export class ThoughtsResolver {
 
     @Mutation(() => Thought)
     async createThought(
-        @Arg('text') text: String
+        @Arg('text') text: String,
+        @Arg('creationTimezone') creationTimezone: String,
+        @Arg('creationLocationLat', { nullable: true }) creationLocationLat?: number,
+        @Arg('creationLocationLon', { nullable: true }) creationLocationLon?: number,
     ): Promise<Thought> {
 
         const thoughtsCollection = collection(this.db, firebaseCollection)
         const docRef = doc(thoughtsCollection)
+        var geoPoint: GeoPoint | undefined
+        if (creationLocationLat != undefined && creationLocationLon != undefined) {
+            geoPoint = new  GeoPoint(creationLocationLat, creationLocationLon)
+        }
         await setDoc(docRef, {
             text: text,
-            createdAt: Timestamp.now()
+            createdAt: Timestamp.now(),
+            creationTimezone: creationTimezone,
+            creationLocation: geoPoint,
         })
         return await this.getThought(docRef.id)
     }
