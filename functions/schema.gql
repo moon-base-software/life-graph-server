@@ -8,6 +8,9 @@ The javascript `Date` as string. Type represents date and time as the ISO Date s
 """
 scalar DateTime
 
+"""Firebase GeoPoint scalar type"""
+scalar GeoPoint
+
 type Mutation {
   createThought(creationLocationLat: Float, creationLocationLon: Float, creationTimezone: String!, text: String!): Thought!
   deleteThought(id: String!): Boolean!
@@ -22,8 +25,7 @@ type Query {
 type Thought {
   creationDateTime: DateTime!
   creationLocalTimezone: String!
-  creationLocationLat: Float
-  creationLocationLon: Float
+  creationLocation: GeoPoint
   id: ID!
   text: String!
 }

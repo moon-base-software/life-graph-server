@@ -33,8 +33,7 @@ export class ThoughtsResolver {
             text, 
             creationDateTime.toDate(), 
             creationTimezone, 
-            creationLocation?.latitude, 
-            creationLocation?.longitude,
+            creationLocation, 
             )
     }
 
