@@ -6,19 +6,23 @@ import { ApolloServer } from "apollo-server-cloud-functions";
 import * as functions from "firebase-functions";
 const { defineString } = require('firebase-functions/params');
 import { GraphQLError } from 'graphql';
-import { buildSchemaSync } from "type-graphql";
-import { ThoughtsResolver } from "./resolvers/thoughts";
+// import { buildSchemaSync } from "type-graphql";
+// import { ThoughtsResolver } from "./resolvers/thoughts";
+// import { ProjectsResolver } from "./resolvers/projects";
 import { DataStore } from "./datastore";
 import { initializeApp } from "firebase/app";
 import { firebaseConfig } from "./firebase-config";
+import { DocumentData, collection, getDocs } from "firebase/firestore/lite";
 // import { GraphQLScalarType, Kind } from 'graphql';
-// const { loadFile } = require('graphql-import-files')
+const { loadFile } = require('graphql-import-files')
 
 const authKey = defineString('AUTH_KEY');
 
 // Ensure Firebase app and store initialisation
 const app = initializeApp(firebaseConfig)
-new DataStore(app)
+const dataStore = new DataStore(app)
+
+const db = dataStore.db
 
 // const dateTimeScalar = new GraphQLScalarType({
 //     name: 'DateTime',
@@ -45,17 +49,44 @@ new DataStore(app)
 //     },
 //   });
 
+const typeDefs = loadFile("schema.gql")
 
-const schema = buildSchemaSync({
-    resolvers: [ThoughtsResolver],
-    dateScalarMode: "isoDate", // "timestamp",
-    emitSchemaFile: process.env.GENERATE_SCHEMA == "true" ?? false
-});
+const resolvers = {
+    Query: {
+       allThoughts: () => {
+          return new Promise((resolve, reject) => {
+            fetchAllNodes('Thoughts', (data) => {
+                   resolve(data);
+              });
+          });
+       }
+    }
+}
+
+// Function to fetch all users from database
+const fetchAllNodes = async (collectionName: string, callback: (data: any) => void) => {
+
+    const firebaseCollection = collection(db, collectionName)
+    const snapshot = await getDocs(firebaseCollection)
+    const items: DocumentData[] = [];
+    snapshot.docs.forEach(item => {
+        items.push(item.data())
+    });
+    return callback(items);
+}
+
+// const schema = buildSchemaSync({
+//     resolvers: [ThoughtsResolver, ProjectsResolver],
+//     dateScalarMode: "isoDate", // "timestamp",
+//     emitSchemaFile: process.env.GENERATE_SCHEMA == "true" ?? false
+// });
 
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.
 const server = new ApolloServer({
-    schema: schema,
+    // schema: schema,
+    typeDefs: typeDefs,
+    resolvers: resolvers,
     introspection: true,
     context: async ({ req }) => {
         // get the user token from the headers
