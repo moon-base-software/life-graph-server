@@ -1,22 +1,18 @@
-import { GeoPoint } from 'firebase/firestore/lite';
-import { ObjectType, Field, ID } from 'type-graphql';
-import { GeoPointScalar } from '../scalars/geopoint';
+import { ObjectType, Field, ID } from 'type-graphql'
+import { CreationLike, CreationScalar } from '../scalars/creation'
 
 @ObjectType({ description: 'Thought model' })
-export class Thought {
+export class Thought extends Node {
 
     constructor(
         id: String,
         text: String,
-        creationDateTime: Date,
-        creationLocalTimezone: String,
-        creationLocation: GeoPoint | undefined,
+        creation: CreationLike,
         ) {
+        super()
         this.id = id
         this.text = text
-        this.creationDateTime = creationDateTime
-        this.creationLocalTimezone = creationLocalTimezone
-        this.creationLocation = creationLocation
+        this.creation = creation
     }
 
     @Field(type => ID)
@@ -25,12 +21,6 @@ export class Thought {
     @Field()
     text: String;
 
-    @Field()
-    creationDateTime: Date
-
-    @Field()
-    creationLocalTimezone: String
-
-    @Field(type => GeoPointScalar, { nullable: true })
-    creationLocation: GeoPoint | undefined
+    @Field(type => CreationScalar, { nullable: false })
+    creation: CreationLike
 }

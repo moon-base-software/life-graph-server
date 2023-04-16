@@ -1,7 +1,8 @@
-import { Resolver, Mutation, Arg, Query } from 'type-graphql';
-import { collection, getDocs, getDoc, setDoc, doc, DocumentSnapshot, DocumentData, Timestamp, deleteDoc, GeoPoint } from 'firebase/firestore/lite';
-import { Thought } from '../entities/thought';
+import { Resolver, Mutation, Arg, Query } from 'type-graphql'
+import { collection, getDocs, getDoc, setDoc, doc, DocumentSnapshot, DocumentData, Timestamp, deleteDoc, GeoPoint } from 'firebase/firestore/lite'
+import { Thought } from '../entities/thought'
 import { DataStore } from '../datastore'
+import { CreationLike } from '../scalars/creation'
 
 const firebaseCollection = "thoughts"
 
@@ -19,21 +20,15 @@ export class ThoughtsResolver {
         if (text === undefined) {
             throw new Error("Thought has no text")
         }
-        const creationDateTime = data["creation_datetime"] as Timestamp | undefined
-        if (creationDateTime === undefined) {
-            throw new Error("Thought has no creation date")
+        const creation = data["creation"] as CreationLike | undefined
+        if (creation === undefined) {
+            throw new Error("Thought has no creation information")
         }
-        const creationTimezone = data["creation_timezone"] as String | undefined
-        if (creationTimezone === undefined) {
-            throw new Error("Thought has no creation timezone")
-        }
-        const creationLocation = data["creation_location"] as GeoPoint | undefined
         return new Thought(
             docRef.id, 
             text, 
-            creationDateTime.toDate(), 
-            creationTimezone, 
-            creationLocation, 
+            creation,
+            // creationDateTime.toDate(), 
             )
     }
 
@@ -67,9 +62,11 @@ export class ThoughtsResolver {
         }
         await setDoc(docRef, {
             text: text,
-            createdAt: Timestamp.now(),
-            creationTimezone: creationTimezone,
-            creationLocation: geoPoint,
+            creation: {
+                datetime: Timestamp.now(),
+                timezone: creationTimezone,
+                location: geoPoint,
+            }
         })
         return await this.getThought(docRef.id)
     }

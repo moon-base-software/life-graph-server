@@ -1,0 +1,13 @@
+
+interface Node {
+    id: ID!
+}
+
+type Thought implements Node {
+    id: ID!
+    text: String!
+}
+
+type Query {
+    allThoughts: [Thought!]
+}
