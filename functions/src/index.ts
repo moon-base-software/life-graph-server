@@ -12,7 +12,7 @@ import { GraphQLError } from 'graphql';
 import { DataStore } from "./datastore";
 import { initializeApp } from "firebase/app";
 import { firebaseConfig } from "./firebase-config";
-import { DocumentData, collection, getDocs } from "firebase/firestore/lite";
+import { DocumentData, arrayUnion, collection, doc, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore/lite";
 // import { GraphQLScalarType, Kind } from 'graphql';
 const { loadFile } = require('graphql-import-files')
 
@@ -52,27 +52,121 @@ const db = dataStore.db
 const typeDefs = loadFile("schema.gql")
 
 const resolvers = {
+    Edge: {
+        __resolveType(edge: { __typename: String }, contextValue: any, info: any) {
+            return edge.__typename
+          },
+    },
+    Node: {
+        __resolveType: (node: { __typename: String }) => {
+            return node.__typename
+        },
+    },
     Query: {
-       allThoughts: () => {
-          return new Promise((resolve, reject) => {
-            fetchAllNodes('Thoughts', (data) => {
-                   resolve(data);
-              });
-          });
-       }
+        allNodes: () => {
+            return new Promise((resolve, reject) => {
+                fetchAllNodes('nodes', (data) => {
+                    resolve(data);
+                });
+            });
+        },
+        allEdges: () => {
+            return new Promise((resolve, reject) => {
+                fetchAllEdges('edges', (data) => {
+                    resolve(data);
+                });
+            });
+        },
+    },
+    Mutation: {
+        createNode: async (parent: any, arg: { typename: String }) => {
+            const node = await createNode(arg.typename)
+            return node
+        },
+        createEdge: async (parent: any, arg: { typename: String, fromNodeID: String, toNodeID: String }) => {
+            const edge = await createEdge(arg.typename, arg.fromNodeID, arg.toNodeID)
+            return edge
+        }
     }
 }
 
-// Function to fetch all users from database
+// Function to fetch all nodes from database
 const fetchAllNodes = async (collectionName: string, callback: (data: any) => void) => {
 
     const firebaseCollection = collection(db, collectionName)
     const snapshot = await getDocs(firebaseCollection)
     const items: DocumentData[] = [];
     snapshot.docs.forEach(item => {
-        items.push(item.data())
+        items.push(makeNodeData(item.id, item.data()))
     });
     return callback(items);
+}
+
+const fetchAllEdges = async (collectionName: string, callback: (data: any) => void) => {
+
+    const firebaseCollection = collection(db, collectionName)
+    const snapshot = await getDocs(firebaseCollection)
+    const items: DocumentData[] = [];
+    snapshot.docs.forEach(item => {
+        items.push(makeEdgeData(item.id, item.data()))
+    });
+    return callback(items);
+}
+
+// Function to create a node from database
+async function createNode(typename: String): Promise<any> {
+
+    // Add a new document in collection
+    const docRef = doc(collection(db, "nodes"))
+    await setDoc(docRef, {
+        __typename: typename
+    });
+    const docSnap = await getDoc(docRef)
+    return makeNodeData(docSnap.id, docSnap.data()) 
+}
+
+// Function to create a node from database
+async function createEdge(typename: String, fromNodeID: String, toNodeID: String): Promise<any> {
+
+    // Add a new document in collection
+    const docRef = doc(collection(db, "edges"))
+    await setDoc(docRef, {
+        __typename: typename,
+        fromNodeID: fromNodeID,
+        toNodeID: toNodeID,
+    });
+    const docSnap = await getDoc(docRef)
+    return makeEdgeData(docSnap.id, docSnap.data()) 
+}
+
+function makeNodeData(id: String, data: DocumentData | undefined): any {
+    var nodeData = data ?? {}
+    nodeData["id"] = id
+    return nodeData
+}
+
+async function makeEdgeData(id: String, data: DocumentData | undefined): Promise<any> {
+    var nodeData = data ?? { fromNodeID: null, toNodeID: null }
+    const fromNodeID = nodeData["fromNodeID"]
+    const toNodeID = nodeData["toNodeID"]
+    const firebaseCollection = collection(db, "nodes")
+    // Get references
+    const fromNodeRef = doc(firebaseCollection, fromNodeID)
+    const toNodeRef = doc(firebaseCollection, toNodeID)
+    // Set Edge reference
+    await updateDoc(fromNodeRef, {
+        outgoingEdges: arrayUnion(id)
+    })
+    await updateDoc(toNodeRef, {
+        incomingEdges: arrayUnion(id)
+    }) 
+    // Get full Node
+    const fromNodeSnap = await getDoc(fromNodeRef)
+    const toNodeSnap = await getDoc(toNodeRef)
+    nodeData["id"] = id
+    nodeData["from"] = makeNodeData(fromNodeSnap.id, fromNodeSnap.data())
+    nodeData["to"] = makeNodeData(toNodeSnap.id, toNodeSnap.data())
+    return nodeData
 }
 
 // const schema = buildSchemaSync({

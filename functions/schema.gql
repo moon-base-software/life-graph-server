@@ -1,0 +1,40 @@
+
+interface Node {
+    id: ID!
+    incomingEdges: [Connection!]!
+    outgoingEdges: [Connection!]!
+}
+
+interface Edge {
+    id: ID!
+    from: Node!
+    to: Node!
+}
+
+type Connection implements Edge {
+    id: ID!
+    from: Node!
+    to: Node!
+}
+
+type Thought implements Node {
+    id: ID!
+    text: String!
+    incomingEdges: [Connection!]!
+    outgoingEdges: [Connection!]!
+}
+
+type Query {
+    allNodes: [Node!]!
+    allEdges: [Edge!]!
+    #node(id: ID!): Node
+    #nodes(type: String): [Node!]
+    #egde(id: ID!): Edge
+    #edges(type: String!): [Edge!]
+    #shortestPath(from: Node!, to: Node!): [Node!]
+}
+
+type Mutation {
+    createNode(typename: String!): Node!
+    createEdge(typename: String!, fromNodeID: String!, toNodeID: String!): Edge!
+}
