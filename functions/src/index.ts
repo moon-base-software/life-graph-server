@@ -61,7 +61,7 @@ const builder = new SchemaBuilder({});
 
 const NodeRef = builder.interfaceRef<GraphNode>('Node')
 const EdgeRef = builder.objectRef<GraphEdge>('Edge')
-// const ThoughtRef = builder.objectRef<Thought>('Thought')
+const ThoughtRef = builder.objectRef<Thought>('Thought')
 
 NodeRef.implement({
     description: 'A node in the graph',
@@ -71,7 +71,7 @@ NodeRef.implement({
             type: [EdgeRef],
             resolve: async (parent) => {
                 var edges: GraphEdge[] = []
-                
+
                 for (const edgeID of parent.incomingEdgeIDs) {
                     const edge = await edgeFromID(edgeID)
                     if (edge !== undefined) {
@@ -113,9 +113,10 @@ EdgeRef.implement({
     }),
 });
 
-// ThoughtRef.implement({
+// builder.objectType(Thought, {
+//     name: 'Thought',
 //     description: 'A thought',
-//     interfaces: [GraphNode],
+//     interfaces: [NodeRef],
 //     isTypeOf: (value) => value instanceof Thought, // valueValidation(value, 'Thought'),
 //     fields: (t) => ({
 //         id: t.exposeString('id', {}),
@@ -123,7 +124,7 @@ EdgeRef.implement({
 //             type: [EdgeRef],
 //             resolve: async (parent) => {
 //                 var edges: GraphEdge[] = []
-                
+
 //                 for (const edgeID of parent.incomingEdgeIDs) {
 //                     const edge = await edgeFromID(edgeID)
 //                     if (edge !== undefined) {
@@ -150,20 +151,57 @@ EdgeRef.implement({
 //     }),
 // });
 
+ThoughtRef.implement({
+    description: 'A thought',
+    interfaces: [NodeRef],
+    isTypeOf: (value) => valueValidation(value, 'Thought'),
+    fields: (t) => ({
+        id: t.exposeString('id', {}),
+        incomingEdges: t.field({
+            type: [EdgeRef],
+            resolve: async (parent) => {
+                var edges: GraphEdge[] = []
+
+                for (const edgeID of parent.incomingEdgeIDs) {
+                    const edge = await edgeFromID(edgeID)
+                    if (edge !== undefined) {
+                        edges.push(edge)
+                    }
+                }
+                return edges
+            },
+        }),
+        outgoingEdges: t.field({
+            type: [EdgeRef],
+            resolve: async (parent) => {
+                var edges: GraphEdge[] = []
+
+                for (const edgeID of parent.outgoingEdgeIDs) {
+                    const edge = await edgeFromID(edgeID)
+                    if (edge !== undefined) {
+                        edges.push(edge)
+                    }
+                }
+                return edges
+            },
+        }),
+    }),
+});
+
 builder.queryType({
     fields: (t) => ({
         node: t.field({
             type: NodeRef,
             args: {
                 id: t.arg.string({ required: true }),
-              },
+            },
             resolve: (parent, args) => nodeFromID(args.id),
         }),
         edge: t.field({
             type: EdgeRef,
             args: {
                 id: t.arg.string({ required: true }),
-              },
+            },
             resolve: (parent, args) => {
                 return edgeFromID(args.id)
             }
@@ -181,7 +219,7 @@ const nodeFromID = async (id: string | undefined) => {
     const docRef = doc(collectionRef, id)
     const docSnap = await getDoc(docRef)
     // TODO need to return the right Object type, eg. Thought
-    return new Thought(id, docSnap.data())
+    return new GraphNode(id, docSnap.data())
 }
 
 const edgeFromID = async (id: string | undefined) => {
@@ -196,15 +234,15 @@ const edgeFromID = async (id: string | undefined) => {
     return new GraphEdge(id, docSnap.data())
 }
 
-// function valueValidation(value: unknown, typeName: string): boolean {
+function valueValidation(value: unknown, typeName: string): boolean {
 
-//     if (value instanceof GraphEdge) {
-//         const node = value as unknown as GraphNode
-//         return node.__typename == typeName
-//     } else { 
-//         return false
-//     }
-// }
+    if (value instanceof GraphEdge) {
+        const node = value as unknown as GraphNode
+        return node.__typename == typeName
+    } else { 
+        return false
+    }
+}
 
 // builder.queryType({
 //   fields: (t) => ({

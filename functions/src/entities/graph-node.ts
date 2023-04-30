@@ -1,7 +1,7 @@
 import { DocumentData } from "firebase/firestore/lite";
 
 export class GraphNode {
-    // typename: string
+    __typename: string
     id: string
     incomingEdgeIDs: string[]
     outgoingEdgeIDs: string[]
@@ -9,11 +9,11 @@ export class GraphNode {
     constructor(id: string, data: DocumentData | undefined) {
       this.id = id
       if (data === undefined) {
-        // this.typename = "Node"
+        this.__typename = "Node"
         this.incomingEdgeIDs = []
         this.outgoingEdgeIDs = []
       } else {
-        // this.typename = data["__typename"] ?? "Node" 
+        this.__typename = data["__typename"] ?? "Node" 
         this.incomingEdgeIDs = data["incomingEdgeIDs"] ?? []
         this.outgoingEdgeIDs = data["outcomingEdgeIDs"] ?? []
       }
