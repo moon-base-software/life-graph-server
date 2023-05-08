@@ -66,7 +66,7 @@ const builder = new SchemaBuilder({});
 const EdgeRef = builder.objectRef<GraphEdge>('Edge')
 // Node
 const NodeRef = builder.interfaceRef<GraphNode>('Node')
-const ThoughtRef = builder.objectRef<GraphNode>('Thought')
+const ThoughtRef = builder.objectRef<ThoughtNode>('Thought')
 // Properties
 const PropertyRef = builder.objectRef<Property>('Property')
 const PropertyValueRef = builder.interfaceRef<PropertyValue>('PropertyValue')
@@ -211,9 +211,11 @@ ThoughtRef.implement({
     description: 'A thought',
     interfaces: [NodeRef],
     isTypeOf: (value) => isThought(value),
-    // fields: (t) => ({
-    //     text: t.exposeString('text', {}),
-    // })
+    fields: (t) => ({
+        text: t.string({
+            resolve: (parent) => parent.text,
+        }),
+    })
 });
 
 builder.queryType({
