@@ -14,3 +14,5 @@ export class DataStore {
         return DataStore.singleton;
     }
 }
+
+export const dataStore = new DataStore(app)

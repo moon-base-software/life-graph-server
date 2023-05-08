@@ -1,4 +1,4 @@
-import { PropertyValue } from "./property-value";
+import { PropertyValue } from "./property-value/property-value";
 
 export class StringPropertyValue extends PropertyValue {
 

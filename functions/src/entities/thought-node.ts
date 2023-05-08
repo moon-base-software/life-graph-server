@@ -1,6 +1,6 @@
 import { DocumentData } from "firebase/firestore/lite"
-import { GraphNode } from "./graph-node"
-import { Property } from "./property"
+import { GraphNode } from "./node/graph-node"
+import { Property } from "./property/property"
 import { StringPropertyValue } from "./string-property-value"
 
 export class ThoughtNode extends GraphNode {

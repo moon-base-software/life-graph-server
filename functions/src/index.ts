@@ -9,30 +9,30 @@ const { defineString } = require('firebase-functions/params');
 // import { buildSchemaSync } from "type-graphql";
 // import { ThoughtsResolver } from "./resolvers/thoughts";
 // import { ProjectsResolver } from "./resolvers/projects";
-import { DataStore } from "./datastore";
-import { firebaseConfig } from "./firebase-config";
+import { DataStore } from "./architecture/datastore";
+import { firebaseConfig } from "./architecture/firebase-config";
 import { collection, doc, getDoc } from "firebase/firestore/lite";
 // import { GraphQLScalarType, Kind } from 'graphql';
 // const { loadFile } = require('graphql-import-files')
-import SchemaBuilder from '@pothos/core'
-import { GraphNode } from "./entities/graph-node";
-import { GraphEdge } from "./entities/graph-edge";
+import { GraphNode } from "./entities/node/graph-node";
+import { GraphEdge } from "./entities/edge/graph-edge";
 import { GraphQLError } from "graphql/error/GraphQLError";
 import { ThoughtNode } from "./entities/thought-node";
-import { Property } from "./entities/property";
-import { PropertyValue } from "./entities/property-value";
+import { Property } from "./entities/property/property";
+import { PropertyValue } from "./entities/property-value/property-value";
 import { StringPropertyValue } from "./entities/string-property-value";
+import { builder } from "./architecture/schema-builder";
 
 const authKey = defineString('AUTH_KEY');
 
-const nodeCollectionName = "nodes"
-const edgeCollectionName = "edges"
+// const nodeCollectionName = "nodes"
+// const edgeCollectionName = "edges"
 
-// Ensure Firebase app and store initialisation
-const app = initializeApp(firebaseConfig)
-const dataStore = new DataStore(app)
+// // Ensure Firebase app and store initialisation
+// const app = initializeApp(firebaseConfig)
+// const dataStore = new DataStore(app)
 
-const db = dataStore.db
+// const db = dataStore.db
 
 // const dateTimeScalar = new GraphQLScalarType({
 //     name: 'DateTime',
@@ -60,91 +60,91 @@ const db = dataStore.db
 //   });
 
 
-const builder = new SchemaBuilder({});
+// const builder = new SchemaBuilder({});
 
 // Edge
-const EdgeRef = builder.objectRef<GraphEdge>('Edge')
-// Node
-const NodeRef = builder.interfaceRef<GraphNode>('Node')
+// const EdgeRef = builder.objectRef<GraphEdge>('Edge')
+// // Node
+// const NodeRef = builder.interfaceRef<GraphNode>('Node')
 const ThoughtRef = builder.objectRef<ThoughtNode>('Thought')
 // Properties
-const PropertyRef = builder.objectRef<Property>('Property')
-const PropertyValueRef = builder.interfaceRef<PropertyValue>('PropertyValue')
+// const PropertyRef = builder.objectRef<Property>('Property')
+// const PropertyValueRef = builder.interfaceRef<PropertyValue>('PropertyValue')
 const StringPropertyValueRef = builder.objectRef<StringPropertyValue>('StringPropertyValue')
 const HasStringValueRef = builder.interfaceRef<StringPropertyValue>('HasStringValue')
 const GivenNameRef = builder.objectRef<StringPropertyValue>('GivenName')
 
-NodeRef.implement({
-    description: 'A node in the graph',
-    fields: (t) => ({
-        id: t.exposeString('id', {}),
-        incomingEdges: t.field({
-            type: [EdgeRef],
-            resolve: async (parent) => {
-                var edges: GraphEdge[] = []
+// NodeRef.implement({
+//     description: 'A node in the graph',
+//     fields: (t) => ({
+//         id: t.exposeString('id', {}),
+//         incomingEdges: t.field({
+//             type: [EdgeRef],
+//             resolve: async (parent) => {
+//                 var edges: GraphEdge[] = []
 
-                for (const edgeID of parent.incomingEdgeIDs) {
-                    const edge = await edgeFromID(edgeID)
-                    if (edge !== undefined) {
-                        edges.push(edge)
-                    }
-                }
-                return edges
-            },
-        }),
-        outgoingEdges: t.field({
-            type: [EdgeRef],
-            resolve: async (parent) => {
-                var edges: GraphEdge[] = []
+//                 for (const edgeID of parent.incomingEdgeIDs) {
+//                     const edge = await edgeFromID(edgeID)
+//                     if (edge !== undefined) {
+//                         edges.push(edge)
+//                     }
+//                 }
+//                 return edges
+//             },
+//         }),
+//         outgoingEdges: t.field({
+//             type: [EdgeRef],
+//             resolve: async (parent) => {
+//                 var edges: GraphEdge[] = []
 
-                for (const edgeID of parent.outgoingEdgeIDs) {
-                    const edge = await edgeFromID(edgeID)
-                    if (edge !== undefined) {
-                        edges.push(edge)
-                    }
-                }
-                return edges
-            },
-        }),
-        properties: t.field({
-            type: [PropertyRef],
-            resolve: (parent) => Array.from(parent.properties.values()),
-        }),
-    }),
-});
+//                 for (const edgeID of parent.outgoingEdgeIDs) {
+//                     const edge = await edgeFromID(edgeID)
+//                     if (edge !== undefined) {
+//                         edges.push(edge)
+//                     }
+//                 }
+//                 return edges
+//             },
+//         }),
+//         properties: t.field({
+//             type: [PropertyRef],
+//             resolve: (parent) => Array.from(parent.properties.values()),
+//         }),
+//     }),
+// });
 
-EdgeRef.implement({
-    description: 'A edge in the graph',
-    fields: (t) => ({
-        id: t.exposeID('id', {}),
-        from: t.field({
-            type: NodeRef,
-            resolve: (parent) => nodeFromID(parent.fromNodeID),
-        }),
-        to: t.field({
-            type: NodeRef,
-            resolve: (parent) => nodeFromID(parent.toNodeID),
-        }),
-    }),
-});
+// EdgeRef.implement({
+//     description: 'A edge in the graph',
+//     fields: (t) => ({
+//         id: t.exposeID('id', {}),
+//         from: t.field({
+//             type: NodeRef,
+//             resolve: (parent) => nodeFromID(parent.fromNodeID),
+//         }),
+//         to: t.field({
+//             type: NodeRef,
+//             resolve: (parent) => nodeFromID(parent.toNodeID),
+//         }),
+//     }),
+// });
 
-PropertyRef.implement({
-    description: 'Property on a node',
-    fields: (t) => ({
-        name: t.exposeString('name', {}),
-        value: t.field({
-            type: PropertyValueRef,
-            resolve: (parent) => parent.value,
-        }),
-    })
-})
+// PropertyRef.implement({
+//     description: 'Property on a node',
+//     fields: (t) => ({
+//         name: t.exposeString('name', {}),
+//         value: t.field({
+//             type: PropertyValueRef,
+//             resolve: (parent) => parent.value,
+//         }),
+//     })
+// })
 
-PropertyValueRef.implement({
-    description: 'The abstract property value',
-    fields: (t) => ({
-        basetype: t.exposeString('basetype', {}),
-    })
-})
+// PropertyValueRef.implement({
+//     description: 'The abstract property value',
+//     fields: (t) => ({
+//         basetype: t.exposeString('basetype', {}),
+//     })
+// })
 
 StringPropertyValueRef.implement({
     description: 'A string property value',
@@ -237,30 +237,30 @@ builder.queryType({
     }),
 });
 
-const nodeFromID = async (id: string | undefined) => {
+// const nodeFromID = async (id: string | undefined) => {
 
-    if (id === undefined) {
-        throw new GraphQLError('Node ID is required')
-    }
+//     if (id === undefined) {
+//         throw new GraphQLError('Node ID is required')
+//     }
 
-    const collectionRef = collection(db, nodeCollectionName)
-    const docRef = doc(collectionRef, id)
-    const docSnap = await getDoc(docRef)
-    // TODO need to return the right Object type, eg. Thought
-    return new GraphNode(id, docSnap.data())
-}
+//     const collectionRef = collection(db, nodeCollectionName)
+//     const docRef = doc(collectionRef, id)
+//     const docSnap = await getDoc(docRef)
+//     // TODO need to return the right Object type, eg. Thought
+//     return new GraphNode(id, docSnap.data())
+// }
 
-const edgeFromID = async (id: string | undefined) => {
+// const edgeFromID = async (id: string | undefined) => {
 
-    if (id === undefined) {
-        throw new GraphQLError('Edge ID is required')
-    }
+//     if (id === undefined) {
+//         throw new GraphQLError('Edge ID is required')
+//     }
 
-    const collectionRef = collection(db, edgeCollectionName)
-    const docRef = doc(collectionRef, id)
-    const docSnap = await getDoc(docRef)
-    return new GraphEdge(id, docSnap.data())
-}
+//     const collectionRef = collection(db, edgeCollectionName)
+//     const docRef = doc(collectionRef, id)
+//     const docSnap = await getDoc(docRef)
+//     return new GraphEdge(id, docSnap.data())
+// }
 
 // function valueValidation(value: unknown, typeName: string): boolean {
 

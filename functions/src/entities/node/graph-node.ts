@@ -1,5 +1,5 @@
 import { DocumentData } from "firebase/firestore/lite"
-import { Property } from "./property"
+import { Property } from "../property/property"
 
 export class GraphNode {
     __typename: string
@@ -41,17 +41,6 @@ export class GraphNode {
 
           props.set(propName, new Property(propName, propValue))
         }
-
-        // TESTING
-        // const printString = Array.from(propertyData.keys()).toString()
-        // const printString = typeof propertyData
-        // props.set(printString, new Property(printString, {__typename: "type", basetype: "base"}))
-
-        // for (const name of propertyData.keys()) {
-        //   const value = propertyData.get(name)
-        //   if (value === undefined) { continue }
-        //   props.set(name, new Property(name, value))
-        // }
         return props
       }
     }
