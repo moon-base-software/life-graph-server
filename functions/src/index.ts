@@ -66,11 +66,13 @@ const builder = new SchemaBuilder({});
 const EdgeRef = builder.objectRef<GraphEdge>('Edge')
 // Node
 const NodeRef = builder.interfaceRef<GraphNode>('Node')
-const ThoughtRef = builder.objectRef<ThoughtNode>('Thought')
+const ThoughtRef = builder.objectRef<GraphNode>('Thought')
 // Properties
 const PropertyRef = builder.objectRef<Property>('Property')
 const PropertyValueRef = builder.interfaceRef<PropertyValue>('PropertyValue')
 const StringPropertyValueRef = builder.objectRef<StringPropertyValue>('StringPropertyValue')
+const HasStringValueRef = builder.interfaceRef<StringPropertyValue>('HasStringValue')
+const GivenNameRef = builder.objectRef<StringPropertyValue>('GivenName')
 
 NodeRef.implement({
     description: 'A node in the graph',
@@ -151,6 +153,20 @@ StringPropertyValueRef.implement({
     fields: (t) => ({
         stringValue: t.exposeString('stringValue', {}),
     })
+})
+
+HasStringValueRef.implement({
+    description: 'A string property value',
+    interfaces: [PropertyValueRef],
+    fields: (t) => ({
+        stringValue: t.exposeString('stringValue', {}),
+    })
+})
+
+GivenNameRef.implement({
+    description: 'A given name',
+    interfaces: [HasStringValueRef, PropertyValueRef],
+    isTypeOf: (value) => isGivenName(value),
 })
 
 // builder.objectType(Thought, {
@@ -272,6 +288,13 @@ function isThought(toBeDetermined: unknown): toBeDetermined is ThoughtNode {
 
 function isStringPropertyValue(toBeDetermined: unknown): toBeDetermined is StringPropertyValue {
     if ((toBeDetermined as StringPropertyValue).basetype) {
+        return true
+    }
+    return false
+}
+
+function isGivenName(toBeDetermined: unknown): toBeDetermined is StringPropertyValue {
+    if ((toBeDetermined as StringPropertyValue).__typename == "GivenName") {
         return true
     }
     return false
