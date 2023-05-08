@@ -18,7 +18,10 @@ import SchemaBuilder from '@pothos/core'
 import { GraphNode } from "./entities/graph-node";
 import { GraphEdge } from "./entities/graph-edge";
 import { GraphQLError } from "graphql/error/GraphQLError";
-import { Thought } from "./entities/thought";
+import { ThoughtNode } from "./entities/thought-node";
+import { Property } from "./entities/property";
+import { PropertyValue } from "./entities/property-value";
+import { StringPropertyValue } from "./entities/string-property-value";
 
 const authKey = defineString('AUTH_KEY');
 
@@ -59,9 +62,15 @@ const db = dataStore.db
 
 const builder = new SchemaBuilder({});
 
-const NodeRef = builder.interfaceRef<GraphNode>('Node')
+// Edge
 const EdgeRef = builder.objectRef<GraphEdge>('Edge')
-const ThoughtRef = builder.objectRef<Thought>('Thought')
+// Node
+const NodeRef = builder.interfaceRef<GraphNode>('Node')
+const ThoughtRef = builder.objectRef<ThoughtNode>('Thought')
+// Properties
+const PropertyRef = builder.objectRef<Property>('Property')
+const PropertyValueRef = builder.interfaceRef<PropertyValue>('PropertyValue')
+const StringPropertyValueRef = builder.objectRef<StringPropertyValue>('StringPropertyValue')
 
 NodeRef.implement({
     description: 'A node in the graph',
@@ -95,6 +104,10 @@ NodeRef.implement({
                 return edges
             },
         }),
+        properties: t.field({
+            type: [PropertyRef],
+            resolve: (parent) => Array.from(parent.properties.values()),
+        }),
     }),
 });
 
@@ -113,79 +126,78 @@ EdgeRef.implement({
     }),
 });
 
+PropertyRef.implement({
+    description: 'Property on a node',
+    fields: (t) => ({
+        name: t.exposeString('name', {}),
+        value: t.field({
+            type: PropertyValueRef,
+            resolve: (parent) => parent.value,
+        }),
+    })
+})
+
+PropertyValueRef.implement({
+    description: 'The abstract property value',
+    fields: (t) => ({
+        basetype: t.exposeString('basetype', {}),
+    })
+})
+
+StringPropertyValueRef.implement({
+    description: 'A string property value',
+    interfaces: [PropertyValueRef],
+    isTypeOf: (value) => isStringPropertyValue(value),
+    fields: (t) => ({
+        stringValue: t.exposeString('stringValue', {}),
+    })
+})
+
 // builder.objectType(Thought, {
 //     name: 'Thought',
 //     description: 'A thought',
 //     interfaces: [NodeRef],
 //     isTypeOf: (value) => value instanceof Thought, // valueValidation(value, 'Thought'),
 //     fields: (t) => ({
-//         id: t.exposeString('id', {}),
-//         incomingEdges: t.field({
-//             type: [EdgeRef],
-//             resolve: async (parent) => {
-//                 var edges: GraphEdge[] = []
+// id: t.exposeString('id', {}),
+// incomingEdges: t.field({
+//     type: [EdgeRef],
+//     resolve: async (parent) => {
+//         var edges: GraphEdge[] = []
 
-//                 for (const edgeID of parent.incomingEdgeIDs) {
-//                     const edge = await edgeFromID(edgeID)
-//                     if (edge !== undefined) {
-//                         edges.push(edge)
-//                     }
-//                 }
-//                 return edges
-//             },
-//         }),
-//         outgoingEdges: t.field({
-//             type: [EdgeRef],
-//             resolve: async (parent) => {
-//                 var edges: GraphEdge[] = []
+//         for (const edgeID of parent.incomingEdgeIDs) {
+//             const edge = await edgeFromID(edgeID)
+//             if (edge !== undefined) {
+//                 edges.push(edge)
+//             }
+//         }
+//         return edges
+//     },
+// }),
+// outgoingEdges: t.field({
+//     type: [EdgeRef],
+//     resolve: async (parent) => {
+//         var edges: GraphEdge[] = []
 
-//                 for (const edgeID of parent.outgoingEdgeIDs) {
-//                     const edge = await edgeFromID(edgeID)
-//                     if (edge !== undefined) {
-//                         edges.push(edge)
-//                     }
-//                 }
-//                 return edges
-//             },
-//         }),
+//         for (const edgeID of parent.outgoingEdgeIDs) {
+//             const edge = await edgeFromID(edgeID)
+//             if (edge !== undefined) {
+//                 edges.push(edge)
+//             }
+//         }
+//         return edges
+//     },
+// }),
 //     }),
 // });
 
 ThoughtRef.implement({
     description: 'A thought',
     interfaces: [NodeRef],
-    isTypeOf: (value) => valueValidation(value, 'Thought'),
-    fields: (t) => ({
-        id: t.exposeString('id', {}),
-        incomingEdges: t.field({
-            type: [EdgeRef],
-            resolve: async (parent) => {
-                var edges: GraphEdge[] = []
-
-                for (const edgeID of parent.incomingEdgeIDs) {
-                    const edge = await edgeFromID(edgeID)
-                    if (edge !== undefined) {
-                        edges.push(edge)
-                    }
-                }
-                return edges
-            },
-        }),
-        outgoingEdges: t.field({
-            type: [EdgeRef],
-            resolve: async (parent) => {
-                var edges: GraphEdge[] = []
-
-                for (const edgeID of parent.outgoingEdgeIDs) {
-                    const edge = await edgeFromID(edgeID)
-                    if (edge !== undefined) {
-                        edges.push(edge)
-                    }
-                }
-                return edges
-            },
-        }),
-    }),
+    isTypeOf: (value) => isThought(value),
+    // fields: (t) => ({
+    //     text: t.exposeString('text', {}),
+    // })
 });
 
 builder.queryType({
@@ -202,9 +214,7 @@ builder.queryType({
             args: {
                 id: t.arg.string({ required: true }),
             },
-            resolve: (parent, args) => {
-                return edgeFromID(args.id)
-            }
+            resolve: (parent, args) => edgeFromID(args.id),
         }),
     }),
 });
@@ -234,14 +244,37 @@ const edgeFromID = async (id: string | undefined) => {
     return new GraphEdge(id, docSnap.data())
 }
 
-function valueValidation(value: unknown, typeName: string): boolean {
+// function valueValidation(value: unknown, typeName: string): boolean {
 
-    if (value instanceof GraphEdge) {
-        const node = value as unknown as GraphNode
-        return node.__typename == typeName
-    } else { 
-        return false
+//     if (typeName == "Thought") {
+//         return isThought(value)
+//     } else {
+
+//     }
+
+//     if (value.__typename !== undefined) {
+//         const node = value as unknown as GraphNode
+//         return node.__typename == typeName
+//     } else if (value instanceof ThoughtNode) {
+//         const node = value as unknown as ThoughtNode
+//         return node.__typename == typeName
+//     } else {
+//         return false
+//     }
+// }
+
+function isThought(toBeDetermined: unknown): toBeDetermined is ThoughtNode {
+    if ((toBeDetermined as ThoughtNode).__typename) {
+        return true
     }
+    return false
+}
+
+function isStringPropertyValue(toBeDetermined: unknown): toBeDetermined is StringPropertyValue {
+    if ((toBeDetermined as StringPropertyValue).basetype) {
+        return true
+    }
+    return false
 }
 
 // builder.queryType({
