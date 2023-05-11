@@ -1,8 +1,14 @@
-import { PropertyValueRef } from "./property-value-ref";
+import { PropertyValueRef } from "./property-value-ref"
 
-PropertyValueRef.implement({
-    description: 'The abstract property value',
-    fields: (t) => ({
-        basetype: t.exposeString('basetype', {}),
+
+export function setupPropertyValue() {
+
+    PropertyValueRef.implement({
+        description: 'The abstract property value',
+        fields: (t) => ({
+            basetype: t.exposeString('basetype', {}),
+        })
     })
-})
+}
+
+

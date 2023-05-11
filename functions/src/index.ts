@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { ApolloServer } from "apollo-server-cloud-functions";
-import { initializeApp } from 'firebase/app';
+// import { initializeApp } from 'firebase/app';
 // import { getFirestore } from 'firebase/firestore/lite';
 // import { Timestamp } from "firebase-admin/firestore";
 import * as functions from "firebase-functions";
@@ -9,19 +9,34 @@ const { defineString } = require('firebase-functions/params');
 // import { buildSchemaSync } from "type-graphql";
 // import { ThoughtsResolver } from "./resolvers/thoughts";
 // import { ProjectsResolver } from "./resolvers/projects";
-import { DataStore } from "./architecture/datastore";
-import { firebaseConfig } from "./architecture/firebase-config";
-import { collection, doc, getDoc } from "firebase/firestore/lite";
+// import { DataStore } from "./architecture/datastore";
+// import { firebaseConfig } from "./architecture/firebase-config";
+// import { collection, doc, getDoc } from "firebase/firestore/lite";
 // import { GraphQLScalarType, Kind } from 'graphql';
 // const { loadFile } = require('graphql-import-files')
-import { GraphNode } from "./entities/node/graph-node";
-import { GraphEdge } from "./entities/edge/graph-edge";
+// import { GraphNode } from "./entities/node/graph-node";
+// import { GraphEdge } from "./entities/edge/graph-edge";
 import { GraphQLError } from "graphql/error/GraphQLError";
-import { ThoughtNode } from "./entities/thought-node";
-import { Property } from "./entities/property/property";
-import { PropertyValue } from "./entities/property-value/property-value";
+// import { ThoughtNode } from "./entities/thought/thought-node";
+// import { Property } from "./entities/property/property";
+// import { PropertyValue } from "./entities/property-value/property-value";
 import { StringPropertyValue } from "./entities/string-property-value";
 import { builder } from "./architecture/schema-builder";
+import { PropertyValueRef } from "./entities/property-value/property-value-ref";
+// import { NodeRef } from "./entities/node/node-ref";
+// import { EdgeRef } from "./entities/edge/edge-ref";
+// import { nodeFromID } from "./entities/node/node-from-id";
+// import { edgeFromID } from "./entities/edge/edge-from-id";
+import { setupPropertyValue } from "./entities/property-value/property-value-implement";
+import { setupNode } from "./entities/node/node-implement";
+import { setupEdge } from "./entities/edge/edge-implement";
+import { setupProperty } from "./entities/property/property-implement";
+import { setupThought } from "./entities/thought/thought-implement";
+import { setupThoughtQuery } from "./entities/thought/thought-query";
+import { setupNodeQuery } from "./entities/node/node-query";
+import { setupEdgeQuery } from "./entities/edge/edge-query";
+import { nodeBuilder } from "./architecture/app-setup";
+import { ThoughtNode } from "./entities/thought/thought-node";
 
 const authKey = defineString('AUTH_KEY');
 
@@ -66,12 +81,13 @@ const authKey = defineString('AUTH_KEY');
 // const EdgeRef = builder.objectRef<GraphEdge>('Edge')
 // // Node
 // const NodeRef = builder.interfaceRef<GraphNode>('Node')
-const ThoughtRef = builder.objectRef<ThoughtNode>('Thought')
+// const ThoughtRef = builder.objectRef<ThoughtNode>('Thought')
 // Properties
 // const PropertyRef = builder.objectRef<Property>('Property')
 // const PropertyValueRef = builder.interfaceRef<PropertyValue>('PropertyValue')
-const StringPropertyValueRef = builder.objectRef<StringPropertyValue>('StringPropertyValue')
-const HasStringValueRef = builder.interfaceRef<StringPropertyValue>('HasStringValue')
+// const HasStringValueRef = builder.interfaceRef<StringPropertyValue>('HasStringValue')
+const StringPropertyValueRef = builder.interfaceRef<StringPropertyValue>('StringPropertyValue')
+const ProperNounRef = builder.interfaceRef<StringPropertyValue>('ProperNoun')
 const GivenNameRef = builder.objectRef<StringPropertyValue>('GivenName')
 
 // NodeRef.implement({
@@ -146,26 +162,43 @@ const GivenNameRef = builder.objectRef<StringPropertyValue>('GivenName')
 //     })
 // })
 
+builder.queryType({})
+
+setupNode()
+setupNodeQuery()
+setupEdge()
+setupEdgeQuery()
+setupProperty()
+setupPropertyValue()
+
+setupThought()
+setupThoughtQuery()
+
+nodeBuilder.register("Thought", (id, data) => new ThoughtNode(id, data))
+
 StringPropertyValueRef.implement({
     description: 'A string property value',
     interfaces: [PropertyValueRef],
-    isTypeOf: (value) => isStringPropertyValue(value),
     fields: (t) => ({
         stringValue: t.exposeString('stringValue', {}),
     })
 })
 
-HasStringValueRef.implement({
-    description: 'A string property value',
-    interfaces: [PropertyValueRef],
-    fields: (t) => ({
-        stringValue: t.exposeString('stringValue', {}),
-    })
+ProperNounRef.implement({
+    description: 'A proper noun value',
+    interfaces: [StringPropertyValueRef, PropertyValueRef],
 })
+
+// StringPropertyValueRef.implement({
+//     description: 'A string property value',
+//     interfaces: [HasStringValueRef, PropertyValueRef],
+//     isTypeOf: (value) => isStringPropertyValue(value),
+// })
+
 
 GivenNameRef.implement({
     description: 'A given name',
-    interfaces: [HasStringValueRef, PropertyValueRef],
+    interfaces: [ProperNounRef, StringPropertyValueRef, PropertyValueRef],
     isTypeOf: (value) => isGivenName(value),
 })
 
@@ -207,35 +240,35 @@ GivenNameRef.implement({
 //     }),
 // });
 
-ThoughtRef.implement({
-    description: 'A thought',
-    interfaces: [NodeRef],
-    isTypeOf: (value) => isThought(value),
-    fields: (t) => ({
-        text: t.string({
-            resolve: (parent) => parent.text,
-        }),
-    })
-});
+// ThoughtRef.implement({
+//     description: 'A thought',
+//     interfaces: [NodeRef],
+//     isTypeOf: (value) => isThought(value),
+//     fields: (t) => ({
+//         text: t.string({
+//             resolve: (parent) => parent.text,
+//         }),
+//     })
+// });
 
-builder.queryType({
-    fields: (t) => ({
-        node: t.field({
-            type: NodeRef,
-            args: {
-                id: t.arg.string({ required: true }),
-            },
-            resolve: (parent, args) => nodeFromID(args.id),
-        }),
-        edge: t.field({
-            type: EdgeRef,
-            args: {
-                id: t.arg.string({ required: true }),
-            },
-            resolve: (parent, args) => edgeFromID(args.id),
-        }),
-    }),
-});
+// builder.queryType({
+//     fields: (t) => ({
+//         node: t.field({
+//             type: NodeRef,
+//             args: {
+//                 id: t.arg.string({ required: true }),
+//             },
+//             resolve: (parent, args) => nodeFromID(args.id),
+//         }),
+//         edge: t.field({
+//             type: EdgeRef,
+//             args: {
+//                 id: t.arg.string({ required: true }),
+//             },
+//             resolve: (parent, args) => edgeFromID(args.id),
+//         }),
+//     }),
+// })
 
 // const nodeFromID = async (id: string | undefined) => {
 
@@ -281,19 +314,19 @@ builder.queryType({
 //     }
 // }
 
-function isThought(toBeDetermined: unknown): toBeDetermined is ThoughtNode {
-    if ((toBeDetermined as ThoughtNode).__typename) {
-        return true
-    }
-    return false
-}
+// function isThought(toBeDetermined: unknown): toBeDetermined is ThoughtNode {
+//     if ((toBeDetermined as ThoughtNode).__typename) {
+//         return true
+//     }
+//     return false
+// }
 
-function isStringPropertyValue(toBeDetermined: unknown): toBeDetermined is StringPropertyValue {
-    if ((toBeDetermined as StringPropertyValue).basetype) {
-        return true
-    }
-    return false
-}
+// function isStringPropertyValue(toBeDetermined: unknown): toBeDetermined is StringPropertyValue {
+//     if ((toBeDetermined as StringPropertyValue).basetype) {
+//         return true
+//     }
+//     return false
+// }
 
 function isGivenName(toBeDetermined: unknown): toBeDetermined is StringPropertyValue {
     if ((toBeDetermined as StringPropertyValue).__typename == "GivenName") {
