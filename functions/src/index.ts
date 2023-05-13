@@ -37,6 +37,8 @@ import { setupNodeQuery } from "./entities/node/node-query";
 import { setupEdgeQuery } from "./entities/edge/edge-query";
 import { nodeBuilder } from "./architecture/app-setup";
 import { ThoughtNode } from "./entities/thought/thought-node";
+import { setupURL } from "./entities/url/url-implement";
+import { URLNode } from "./entities/url/url-node";
 
 const authKey = defineString('AUTH_KEY');
 
@@ -89,6 +91,9 @@ const authKey = defineString('AUTH_KEY');
 const StringPropertyValueRef = builder.interfaceRef<StringPropertyValue>('StringPropertyValue')
 const ProperNounRef = builder.interfaceRef<StringPropertyValue>('ProperNoun')
 const GivenNameRef = builder.objectRef<StringPropertyValue>('GivenName')
+const ReferenceStringRef = builder.objectRef<StringPropertyValue>('ReferenceString')
+
+// const URLRef = builder.objectRef<StringPropertyValue>('URL')
 
 // NodeRef.implement({
 //     description: 'A node in the graph',
@@ -174,7 +179,10 @@ setupPropertyValue()
 setupThought()
 setupThoughtQuery()
 
+setupURL()
+
 nodeBuilder.register("Thought", (id, data) => new ThoughtNode(id, data))
+nodeBuilder.register("URL", (id, data) => new URLNode(id, data))
 
 StringPropertyValueRef.implement({
     description: 'A string property value',
@@ -200,6 +208,12 @@ GivenNameRef.implement({
     description: 'A given name',
     interfaces: [ProperNounRef, StringPropertyValueRef, PropertyValueRef],
     isTypeOf: (value) => isGivenName(value),
+})
+
+ReferenceStringRef.implement({
+    description: 'A reference string',
+    interfaces: [StringPropertyValueRef, PropertyValueRef],
+    isTypeOf: (value) => isReferenceString(value),
 })
 
 // builder.objectType(Thought, {
@@ -330,6 +344,13 @@ GivenNameRef.implement({
 
 function isGivenName(toBeDetermined: unknown): toBeDetermined is StringPropertyValue {
     if ((toBeDetermined as StringPropertyValue).__typename == "GivenName") {
+        return true
+    }
+    return false
+}
+
+function isReferenceString(toBeDetermined: unknown): toBeDetermined is StringPropertyValue {
+    if ((toBeDetermined as StringPropertyValue).__typename == "ReferenceString") {
         return true
     }
     return false

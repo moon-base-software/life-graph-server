@@ -17,7 +17,7 @@ export function setupThought() {
 }
 
 function isThought(toBeDetermined: unknown): toBeDetermined is ThoughtNode {
-    if ((toBeDetermined as ThoughtNode).__typename) {
+    if ((toBeDetermined as ThoughtNode).__typename == "Thought") {
         return true
     }
     return false
