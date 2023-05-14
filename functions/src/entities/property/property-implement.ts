@@ -1,4 +1,4 @@
-import { PropertyValueRef } from "../property-value/property-value-ref";
+import { PropertyValueRef } from "../property-value-types/property-value/property-value-ref";
 import { PropertyRef } from "./property-ref";
 
 export function setupProperty() {

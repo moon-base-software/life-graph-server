@@ -1,5 +1,5 @@
-import { PropertyValue } from "../property-value/property-value"
-import { StringPropertyValue } from "../string-property-value"
+import { PropertyValue } from "../property-value-types/property-value/property-value"
+import { StringPropertyValue } from "../property-value-types/string-property-value/string-property-value"
 
 
 export class Property {
