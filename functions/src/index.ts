@@ -17,6 +17,7 @@ import { registerProperNoun } from "./entities/property-value-types/proper-noun/
 const authKey = defineString('AUTH_KEY');
 
 builder.queryType({})
+builder.mutationType({})
 
 registerNode()
 registerEdge()
