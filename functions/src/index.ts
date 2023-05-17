@@ -11,8 +11,8 @@ import { registerPropertyBaseTypes } from "./entities/property-value-types/prope
 import { registerThought } from "./entities/thought/thought-registration"
 import { registerURL } from "./entities/url/url-registration"
 import { registerGivenName } from "./entities/property-value-types/given-name/given-name-registration"
-import { setupProperNoun } from "./entities/property-value-types/proper-noun/proper-noun-implement"
 import { registerReferenceString } from "./entities/property-value-types/reference-string/reference-string-registration"
+import { registerProperNoun } from "./entities/property-value-types/proper-noun/proper-noun-registration"
 
 const authKey = defineString('AUTH_KEY');
 
@@ -26,7 +26,7 @@ registerPropertyBaseTypes()
 registerThought()
 registerURL()
 
-setupProperNoun()
+registerProperNoun()
 registerGivenName()
 registerReferenceString()
 
