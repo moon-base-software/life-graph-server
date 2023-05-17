@@ -1,28 +1,20 @@
-import "reflect-metadata";
-import { ApolloServer } from "apollo-server-cloud-functions";
-import * as functions from "firebase-functions";
-const { defineString } = require('firebase-functions/params');
-import { GraphQLError } from "graphql/error/GraphQLError";
-import { StringPropertyValue } from "./entities/property-value-types/string-property-value/string-property-value";
-import { builder } from "./architecture/schema-builder";
-import { PropertyValueRef } from "./entities/property-value-types/property-value/property-value-ref";
-import { setupThought } from "./entities/thought/thought-implement";
-import { setupThoughtQuery } from "./entities/thought/thought-query";
-import { nodeBuilder } from "./architecture/app-setup";
-import { ThoughtNode } from "./entities/thought/thought-node";
-import { setupURL } from "./entities/url/url-implement";
-import { URLNode } from "./entities/url/url-node";
-import { registerNode } from "./entities/node/node-registration";
-import { registerEdge } from "./entities/edge/edge-registration";
-import { registerProperty } from "./entities/property/property-registration";
-import { StringPropertyValueRef } from "./entities/property-value-types/string-property-value/string-property-value-ref";
-import { registerPropertyBaseTypes } from "./entities/property-value-types/property-base-types-registration";
+import "reflect-metadata"
+import { ApolloServer } from "apollo-server-cloud-functions"
+import * as functions from "firebase-functions"
+const { defineString } = require('firebase-functions/params')
+import { GraphQLError } from "graphql/error/GraphQLError"
+import { builder } from "./architecture/schema-builder"
+import { registerNode } from "./entities/node/node-registration"
+import { registerEdge } from "./entities/edge/edge-registration"
+import { registerProperty } from "./entities/property/property-registration"
+import { registerPropertyBaseTypes } from "./entities/property-value-types/property-base-types-registration"
+import { registerThought } from "./entities/thought/thought-registration"
+import { registerURL } from "./entities/url/url-registration"
+import { registerGivenName } from "./entities/property-value-types/given-name/given-name-registration"
+import { setupProperNoun } from "./entities/property-value-types/proper-noun/proper-noun-implement"
+import { registerReferenceString } from "./entities/property-value-types/reference-string/reference-string-registration"
 
 const authKey = defineString('AUTH_KEY');
-
-const ProperNounRef = builder.interfaceRef<StringPropertyValue>('ProperNoun')
-const GivenNameRef = builder.objectRef<StringPropertyValue>('GivenName')
-const ReferenceStringRef = builder.objectRef<StringPropertyValue>('ReferenceString')
 
 builder.queryType({})
 
@@ -31,47 +23,14 @@ registerEdge()
 registerProperty()
 registerPropertyBaseTypes()
 
-setupThought()
-setupThoughtQuery()
+registerThought()
+registerURL()
 
-setupURL()
-
-nodeBuilder.register("Thought", (id, data) => new ThoughtNode(id, data))
-nodeBuilder.register("URL", (id, data) => new URLNode(id, data))
-
-ProperNounRef.implement({
-    description: 'A proper noun value',
-    interfaces: [StringPropertyValueRef, PropertyValueRef],
-})
-
-GivenNameRef.implement({
-    description: 'A given name',
-    interfaces: [ProperNounRef, StringPropertyValueRef, PropertyValueRef],
-    isTypeOf: (value) => isGivenName(value),
-})
-
-ReferenceStringRef.implement({
-    description: 'A reference string',
-    interfaces: [StringPropertyValueRef, PropertyValueRef],
-    isTypeOf: (value) => isReferenceString(value),
-})
-
-function isGivenName(toBeDetermined: unknown): toBeDetermined is StringPropertyValue {
-    if ((toBeDetermined as StringPropertyValue).__typename == "GivenName") {
-        return true
-    }
-    return false
-}
-
-function isReferenceString(toBeDetermined: unknown): toBeDetermined is StringPropertyValue {
-    if ((toBeDetermined as StringPropertyValue).__typename == "ReferenceString") {
-        return true
-    }
-    return false
-}
+setupProperNoun()
+registerGivenName()
+registerReferenceString()
 
 const schema = builder.toSchema();
-
 
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.
